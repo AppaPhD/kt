@@ -1,0 +1,62 @@
+/***************************************************
+  Filename: keytest.c
+
+Five switches are connected to pins 0 - 4, 
+the other lead is connected to ground.
+
+***************************************************/
+#include <stdio.h>
+#include <stdlib.h>
+#include <wiringPi.h>
+
+void setup(void)
+{
+  int i;
+
+  if (geteuid() != 0)
+  {
+    fprintf (stderr, "You need to be root to run this program. (sudo?)\n") ;
+    exit(0) ;
+  }
+
+  if (wiringPiSetup() == -1)
+  {
+    printf("wiringPiSetup error\n");
+    exit(1) ;
+  }
+
+  for(i=0;i<5;i++)    //Set pins 0-4 for input, with pullup.
+  {
+    pinMode(i, INPUT);
+    pullUpDnControl (i, PUD_UP);
+  }
+}
+
+void loop(void)
+{
+  int i,c;
+  int readpin[5] = {0,1,2,3,4};
+  int ascii[5] = {80,62,60,47,42};
+
+  for(i=0;i<5;i++)
+  {
+    if(digitalRead(readpin[i])==LOW)
+    {
+      while(digitalRead(readpin[i])==LOW); // De-bounce
+      ungetc(ascii[i],stdin);              // Push value into input buffer.
+      c = getchar();
+      printf("%c - Ascii = %d\n",c,c);     // Or whatever you want to do with it.
+      i = 5;                               // Force exit of for loop.
+    }
+  }
+}
+
+int main(void)
+{
+  setup();
+
+  for(;;)
+  {
+    loop();
+  }
+}
